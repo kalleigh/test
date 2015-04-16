@@ -1,0 +1,40 @@
+---
+title: "RepDate_Peer Assignment 2"
+author: "Kalyani"
+date: "April 16, 2015"
+output: html_document
+---
+#Synopsis:
+
+
+
+```{r}
+storm<-read.csv("~/StormData.csv")
+storm$BGN_DATE<-gsub(":00$", "", storm$BGN_DATE)
+storm$BGN_DATE<-gsub("0:00$", "", storm$BGN_DATE)
+storm$BGN_DATE<-strptime(storm$BGN_DATE, "%m/%d/%Y")
+library(dplyr)
+library(zoo)
+storm$EVTYPE<-tolower(storm$EVTYPE)
+storm$BGN_DATE<-as.Date(storm$BGN_DATE)
+group<-group_by(storm, EVTYPE)
+q1<-summarise_each(group, funs(sum))
+q1<-select(q1, BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
+storm$PROPDMGEXP<-gsub("m", "M", storm$PROPDMGEXP)
+storm$PROPDMGEXP<-gsub("[^KBM ]", "?", storm$PROPDMGEXP)
+mydf<-subset(storm, storm$PROPDMGEXP!="?")
+storm$CROPDMGEXP<-gsub("m", "M", storm$CROPDMGEXP)
+storm$CROPDMGEXP<-gsub("k", "K", storm$CROPDMGEXP)
+
+
+
+```
+
+#Data Processing:
+
+
+```{r}
+
+```
+
+#Results:
