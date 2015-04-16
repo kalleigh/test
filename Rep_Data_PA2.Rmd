@@ -1,5 +1,5 @@
 ---
-title: "RepDate_Peer Assignment 2"
+title: "RD_P2"
 author: "Kalyani"
 date: "April 16, 2015"
 output: html_document
@@ -10,16 +10,23 @@ output: html_document
 
 ```{r}
 storm<-read.csv("~/StormData.csv")
-storm$BGN_DATE<-gsub(":00$", "", storm$BGN_DATE)
-storm$BGN_DATE<-gsub("0:00$", "", storm$BGN_DATE)
+storm$BGN_DATE<-gsub("0:00:00$", "", storm$BGN_DATE)
 storm$BGN_DATE<-strptime(storm$BGN_DATE, "%m/%d/%Y")
 library(dplyr)
 library(zoo)
-storm$EVTYPE<-tolower(storm$EVTYPE)
 storm$BGN_DATE<-as.Date(storm$BGN_DATE)
-group<-group_by(storm, EVTYPE)
-q1<-summarise_each(group, funs(sum))
-q1<-select(q1, BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
+q1<-select(storm, BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
+q1$EVTYPE<-tolower(q1$EVTYPE)
+eventlist<-c("astronomical low tide", "avalanche", "blizzard", "coastal flood", "cold/wind chill", "debris flow", "dense fog", "dense smoke", "drought", "dust devil", "dust storm", "excessive heat", "extreme cold/wind chill", "flash flood", "flood", "frost/freeze", "funnel cloud", "freezing fog", "hail", "heat", "heavy rain", "heavy snow", "high surf", "high wind", "hurricane(typhoon)", "ice storm", "lake-effect snow","lakeshore flood", "lightning", "marine hail", "marine high wind", "marine strong wind", "marine thunderstorm wind", "rip current", "seiche", "sleet", "storm surge/tide", "strong wind", "thunderstorm wind", "tornado", "tropical depression", "tropical storm", "tsunami", "volcanic ash", "waterspout", "wildfire", "winter storm", "winter weather")
+
+for(i in 1:nrow(storm)){
+  location<-pmatch(eventlist, evtype[i])
+  if(location ! = NULL){
+    evtype[i]=
+  }
+    
+}
+
 storm$PROPDMGEXP<-gsub("m", "M", storm$PROPDMGEXP)
 storm$PROPDMGEXP<-gsub("[^KBM ]", "?", storm$PROPDMGEXP)
 mydf<-subset(storm, storm$PROPDMGEXP!="?")
