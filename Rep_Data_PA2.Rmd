@@ -18,23 +18,87 @@ storm$BGN_DATE<-as.Date(storm$BGN_DATE)
 q1<-select(storm, BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
 q1$EVTYPE<-tolower(q1$EVTYPE)
 eventlist<-c("astronomical low tide", "avalanche", "blizzard", "coastal flood", "cold/wind chill", "debris flow", "dense fog", "dense smoke", "drought", "dust devil", "dust storm", "excessive heat", "extreme cold/wind chill", "flash flood", "flood", "frost/freeze", "funnel cloud", "freezing fog", "hail", "heat", "heavy rain", "heavy snow", "high surf", "high wind", "hurricane(typhoon)", "ice storm", "lake-effect snow","lakeshore flood", "lightning", "marine hail", "marine high wind", "marine strong wind", "marine thunderstorm wind", "rip current", "seiche", "sleet", "storm surge/tide", "strong wind", "thunderstorm wind", "tornado", "tropical depression", "tropical storm", "tsunami", "volcanic ash", "waterspout", "wildfire", "winter storm", "winter weather")
+evtype<-q1$EVTYPE
+matched<-match(evtype, eventlist)
+table(matched, useNA="ifany")
+matchevent<-eventlist[matched]
+q1<-cbind(q1, matchevent)
+na<-is.na(q1$matchevent)
+navalues<-q1[na,]
+navalues$EVTYPE<-gsub("tstm wind", "thunderstorm wind", navalues$EVTYPE)
+navalues$EVTYPE<-gsub("[s]$", "", navalues$EVTYPE)
+navalues$EVTYPE<-gsub("\\d", "", navalues$EVTYPE)
+navalues$EVTYPE<-gsub("^(\\s)|(\\s)$", "", navalues$EVTYPE)
+q2<-q1[!na,]
+thunder<-subset(navalues, navalues$EVTYPE=="thunderstorm wind")
+q2<-rbind(q2, thunder)
+q2<-select(q2, -matchevent)
 
-for(i in 1:nrow(storm)){
-  location<-pmatch(eventlist, evtype[i])
-  if(location ! = NULL){
-    evtype[i]=
-  }
-    
-}
 
-storm$PROPDMGEXP<-gsub("m", "M", storm$PROPDMGEXP)
-storm$PROPDMGEXP<-gsub("[^KBM ]", "?", storm$PROPDMGEXP)
-mydf<-subset(storm, storm$PROPDMGEXP!="?")
-storm$CROPDMGEXP<-gsub("m", "M", storm$CROPDMGEXP)
-storm$CROPDMGEXP<-gsub("k", "K", storm$CROPDMGEXP)
+q2$PROPDMGEXP<-gsub("m", "M", q2$PROPDMGEXP)
+q2$PROPDMGEXP<-gsub("[^KBMH ]", "?", q2$PROPDMGEXP)
+q2$PROPDMGEXP<-gsub("H", "100", q2$PROPDMGEXP)
+q2$PROPDMGEXP<-gsub("K", "1000", q2$PROPDMGEXP)
+q2$PROPDMGEXP<-gsub("M", "1000000", q2$PROPDMGEXP)
+q2$PROPDMGEXP<-gsub("B", "1000000000", q2$PROPDMGEXP)
+
+q3<-subset(q2, q2$PROPDMGEXP!="?")
+
+q3$PROPDMGEXP<-as.numeric(q3$PROPDMGEXP)
+q3$PROPDAMAGE<-q3$PROPDMG * q3$PROPDMGEXP
+
+q3$CROPDMGEXP<-gsub("m", "M", q3$CROPDMGEXP)
+q3$CROPDMGEXP<-gsub("k", "K", q3$CROPDMGEXP)
+q3$CROPDMGEXP<-gsub("[^KBM ]", "?", q3$CROPDMGEXP)
+q3$CROPDMGEXP<-gsub("K", "1000", q3$CROPDMGEXP)
+q3$CROPDMGEXP<-gsub("M", "1000000", q3$CROPDMGEXP)
+q3$CROPDMGEXP<-gsub("B", "1000000000", q3$CROPDMGEXP)
+
+q4<-subset(q3, q3$CROPDMGEXP!="?")
+q4$CROPDMGEXP<-as.numeric(q4$CROPDMGEXP)
+q4$CROPDAMAGE<-q4$CROPDMG * q4$CROPDMGEXP
+
+q5<-select(q4, EVTYPE, FATALITIES, INJURIES, PROPDAMAGE, CROPDAMAGE)
+names(q5)<-tolower(names(q5))
+
+grouping<-group_by(q5, evtype)
+q6<-summarise_each(grouping, funs(sum))
+
+fatalities<-select(q6, evtype, fatalities)
+fatalities<-arrange(fatalities, desc(fatalities))
+fataltop10<-fatalities[1:10,]
+fataltop10$evtype<-as.factor(fataltop10$evtype)
+maxfatality<-fataltop10[1,]
+evtfatality<-maxfatality[1]
+
+g<-ggplot(data = fataltop10, aes(x=evtype, y=fatalities, fill=evtype))
+g + geom_bar(stat="identity") + labs(title="Total Fatalities caused by Storm Events in United State", x="Event Type", y="Total Number of Fatalities")
 
 
+injuries<-select(q6, evtype, injuries)
+injuries<-arrange(injuries, desc(injuries))
+injurytop10<-injuries[1:10, ]
+injurytop10$evtype<-as.factor(injurytop10$evtype)
+maxinjury<-injurytop10[1,]
+evtinjury<-maxinjury[1]
 
+f<-ggplot(data=injurytop10, aes(x=evtype, y=injuries, fill=evtype))
+f+geom_bar(stat="identity")+labs(title="Total Injuries caused by Storm Events in United State", x="Event Type", y="Total Number of Injuries")
+
+propdamage<-select(q6, evtype, propdamage)
+propdamage<-arrange(propdamage, desc(propdamage))
+propdamagetop5<-propdamage[1:5,]
+maxexpense<-propdamagetop5[1,]
+maxevtexp<-maxexpense[1]
+
+k<-ggplot(data=propdamagetop5, aes(x=factor(evtype), y=propdamage, fill=factor(evtype)))
+> k+geom_bar(stat="identity")+labs(title="Total Property Damage Expenses by Storm Events in United States", x="Event Types", y="Property Damage Expenses in $")
+
+cropdamage<-select(q6, evtype, cropdamage)
+cropdamage<-arrange(cropdamage, desc(cropdamage))
+cropdamagetop5<-cropdamage[1:5,]
+maxcropexpense<-cropdamagetop5[1,]
+maxevtcrpexp<-maxcropexpense[1]
 ```
 
 #Data Processing:
